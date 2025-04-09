@@ -51,8 +51,8 @@ double evaluar(Individuo ind){
     char comando[500];
 
     snprintf(comando, sizeof(comando), ".\\robustez.exe %d %lf %lf %lf %d %s %d > resultado.txt", // <-- Aquí cambiar "\\" por "./" si el S.O. es Linux o MacOs
-             ind.iteraciones, ind.rho, ind.alpha, ind.beta, ind.num_hormigas, "grafo_prueba.txt", 0);
-    
+             ind.iteraciones, ind.rho, ind.alpha, ind.beta, ind.num_hormigas, "grafo_prueba.txt", 0); // <-- Incorporar cualquier instancia (archivo) presente en el directorio especificado (llamado "Instacias del Problema")
+                                                                                                      // (en este caso particular, se emplea un ejemplo sencillo para propósitos de prueba).
     system(comando);
 
     //leemos el resultado desde el archivo de salida

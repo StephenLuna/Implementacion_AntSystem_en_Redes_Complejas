@@ -36,14 +36,9 @@ void leer_archivo(const std::string& nombre_archivo, const short tipo_grafo);
 void representacion_matriz(std::string archivo, int tam_del_grafo);
 void representacion_lista(std::string archivo, int tam_del_grafo);
 
-// FUNCIONES DE ESTADO "EXTRA"
-void continuar_ejecucion();
-
 // ** LISTA **
-//void lista_adyacencia(const std::string &archivo);
 void imprimir_lista_adyacencia(const std:: vector<std::vector<int>> &lista);
 // *** MATRIZ *** 
-//void matriz_adyacencia(const std::string &archivo);
 void imprimir_matriz_adyacencia(const std:: vector<std:: vector<bool>> &matriz);
 
 /* ** FUNCIONES PARA LA IMPLEMENTACIÓN REAL: Aplicando el Sistema Hormiga ("Ant System") ** */

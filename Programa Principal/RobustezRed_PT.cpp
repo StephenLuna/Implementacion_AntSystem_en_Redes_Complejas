@@ -42,6 +42,8 @@ int main (int argc, char *argv[]) {
     }
     // De otro modo, se tiene las siguientes opciones:
 
+    std:: cout << "\n\t- Implementación y Ejecución del Algoritmo ANT SYSTEM - \n\n";
+
     // Si la opción es cero
     if ( respuesta_usuario == 0 ) { 
         representacion_matriz(archivo, tam_del_grafo); // Representa la red como MATRIZ DE ADYACENCIA
@@ -53,13 +55,10 @@ int main (int argc, char *argv[]) {
         else { // De no ser así, mostramos un mensaje de advertencia al usuario
                 std:: cout << "\nLa selección realizada no es válida según los parámetros establecidos.\n";
         }
-    std:: cout << "\n";
-    // Limpia pantalla si el usuario dio '1' (u otro) como tecla de continuación
-    /*continuar_ejecucion();  DADO QUE EL ALGORITMO (DE) ESTABLECE LOS PARAMETROS
-    NO ES NECESARIO UTILIZAR ESTA FUNCIÓN*/
-            
-    std:: cout << "\nHasta la próxima, en el eco de los días." 
-               <<" Au revoir, querido viajero de palabras y sonrisas d:D\n\n";
+        
+    std:: cout << "\nProceso del método ANT SYSTEM **Finalizado exitosamente**\n\n" 
+               << "\tPor favor, consulte el archivo generado, denominado \"valores_AntSystem.txt\",\n"
+               << "\tpara analizar los resultados obtenidos.\n";
     
     return 0;
 } // Fin de la función main
