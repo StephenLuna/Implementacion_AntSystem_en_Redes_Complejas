@@ -60,5 +60,10 @@ int main (int argc, char *argv[]) {
                << "\tPor favor, consulte el archivo generado, denominado \"valores_AntSystem.txt\",\n"
                << "\tpara analizar los resultados obtenidos.\n";
     
+    std:: cout << "\n|------------------------------------------------------------------|\n";
+    std:: cout << "\tClasificación Basada en las Funciones Objetivo Evaluadas\n\n";
+    mostrar_MejorPeor_funcionObjetivo();
+    std:: cout << "|------------------------------------------------------------------|\n\n";
+    
     return 0;
 } // Fin de la función main

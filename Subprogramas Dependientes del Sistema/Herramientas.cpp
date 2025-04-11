@@ -29,7 +29,9 @@ vector<vector<int>> lista {};
 // Se generará un archivo adjunto para facilitar el análisis de los resultados,
 // optimizando el proceso de revisión al evitar la ineficiencia asociada con
 // la visualización directa en pantalla
-ofstream antSystem("valores_AntSystem.txt"); 
+ofstream antSystem("valores_AntSystem.txt");
+float mejor_costo = 99999.99999f; // El mejor costo de la función objetivo, dado por un número de hormigas
+float peor_costo = 0.0f; // El peor costo de la función objetivo mediante el número de hormigas
 
 // Parámetros que serán ajustados a través de un algoritmo evolutivo,
 // especificamente Evolución Diferencial, y representados como 
@@ -940,5 +942,24 @@ void funcion_objetivo(v_hormigas &hormiga, const int id_hormiga, const int NODOS
 // Muestra los valores o costo de la función objetivo de cada hormiga
 void mostrar_funciones_objetivo(const v_hormigas &hormiga, const int id_hormiga) {
     antSystem << "**Función Objetivo (Costo): " << hormiga[id_hormiga].FO << "\n\n";
+
+    // Además de mostrar cada función objetivo por cada hormiga
+    // es necesario obtener, para nuestra sección de resultados,
+    // el mejor y el peor costo de la función objetivo
+
+    if ( hormiga[id_hormiga].FO < mejor_costo ) {
+        mejor_costo = hormiga[id_hormiga].FO;
+    }
+
+    if ( hormiga[id_hormiga].FO > peor_costo ) {
+        peor_costo = hormiga[id_hormiga].FO;
+    }
+
 } // Fin de la función mostrar_funciones_objetivo
+
+// Una sencilla función que sólo muestra el mejor y el peor costo de una función objetivo
+void mostrar_MejorPeor_funcionObjetivo() {
+    cout << "\t- Mejor Función Objetivo: " << mejor_costo << "\n";
+    cout << "\t- Peor Función Objetivo: " << peor_costo << "\n";
+} // Fin de la función mostrar_MejorPeor_funcionObjetivo
 

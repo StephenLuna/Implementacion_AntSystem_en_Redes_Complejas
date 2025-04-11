@@ -85,5 +85,6 @@ void mostrar_componentes(const v_hormigas &hormiga, const int id_hormiga);
 // Cálculo de la Función Objetivo
 void funcion_objetivo(v_hormigas &hormiga, const int id_hormiga,const int NODOS_DE_LA_RED, const short opcion);
 void mostrar_funciones_objetivo(const v_hormigas &hormiga, const int id_hormiga);
+void mostrar_MejorPeor_funcionObjetivo();
 
 #endif
