@@ -136,7 +136,7 @@ void leer_archivo(const string& nombre_archivo, const short tipo_grafo) {
         // Si alguno de los nodos (u y v) no están dentro del rango esperado
         if ( nodo_origen >= num_nodos || nodo_destino >= num_nodos ) {
             cerr << "ADVERTENCIA: Nodo fuera del rango especificado: ("
-                 << nodo_origen + 1 << ", " << nodo_destino + 1 << ")\n";
+                 << nodo_origen + 1 << ", " << nodo_destino + 1 << ")\n\n";
             exit(EXIT_FAILURE); // Finaliza el programa para no generar posibles errores con la memoria de cada estructura de datos
         }
 
@@ -163,8 +163,8 @@ void leer_archivo(const string& nombre_archivo, const short tipo_grafo) {
         for ( int contador = 0; contador < lista.size(); ++contador ) {
             sort(lista[contador].begin(), lista[contador].end());
         }
-    }
-
+    } 
+    
     archivo.close(); // Cierra el archivo para evitar errores de lectura
 
 } // Fin de la función leer_archivo
@@ -418,7 +418,6 @@ void aplicar_feromona_t(const int TAM_RED, v_nodos &nodo, const short opcion) {
 
     for ( int t = 0; t < num_iteraciones; ++t ) {
         antSystem << "---Feromona en Iteración t(" << t << ")-->>\n";
-        //this_thread::sleep_for(chrono::seconds(4));
 
         v_hormigas hormiga; // Un conjunto de vectores que representa a las hormigas junto con su información adicional
         creacion_de_hormigas(hormiga, TAM_RED, nodo); // Inicializa o reserva memoria, dado al número de hormigas
@@ -450,12 +449,29 @@ void calcular_probabilidad_i(v_hormigas &hormiga, int id_hormiga, const v_nodos 
         // Si el valor actual es el primero del conjunto 
         if ( elemento == 0 ) {
             // Sumamos como 0 + valor de la probabilidad
-            acumulada[elemento] += hormiga[id_hormiga].probabilidad[elemento];
+            acumulada[elemento] = hormiga[id_hormiga].probabilidad[elemento];
         } 
         else { // En otro caso
             // Suma el valor actual más el valor anterior
-            acumulada[elemento] += acumulada[elemento - 1] + hormiga[id_hormiga].probabilidad[elemento];
+            acumulada[elemento] = acumulada[elemento - 1] + hormiga[id_hormiga].probabilidad[elemento];
         }
+
+        // Normalizamos la distribución acumulada para que el último valor sea 1.0
+        float total = acumulada[TAM_PROBA - 1]; // Obtiene el total (último valor del arreglo)
+                                                // cuya suma refleja todas las probabilidades
+                                                // para aquellos nodos que aún no han sido visitados
+
+        // Si el total (la suma) es un entero positivo                                                
+        if ( total > 0 ) {
+            // Divide cada valor o suma parcial entre la suma total (la acumulada)
+            for ( int i = 0; i < TAM_PROBA; ++i ) {
+                acumulada[i] /= total; // Así, la última posición (que es la suma) tendrá la suma válida de las probabilidades (i.e. "1.0")
+            }
+        }
+
+        /* A través de esta nueva implementación, evitamos que los intervalos estén fuera de rango
+        cuando se generan números aleatorios entre 0 y 1, de tal forma que los indices no sean, 
+        y no debería serlo, -1 */
 
     }
 
@@ -480,17 +496,23 @@ double Sumatoria_tabu_heuristico(const v_nodos &nodo, const bool *lista_tabu) {
 
 // Función que aplica el método hormiga (proceso de buscar una solución)
 void sistema_hormiga(v_hormigas &hormiga, const int TAM, v_nodos &nodo, const short opcion) {
-    RHO = 1 - RHO; // Calcula el "estado de evaporación" mediante un parámetro equilibrado, denominado como RHO
+    // Calcula el "estado de evaporación" mediante un parámetro equilibrado, denominado como RHO 
+    // Sin embargo, dado que el algoritmo evolutivo de la Evolución Diferencial, puede generar
+    // valores no válidos para RHO (por ejemplo, un número mayor a 1), es necesario
+    // obtener su valor absoluto (|x|), ya que valores negativos, provocará actualizaciones erróneas en la feromona
+    // generando, así, ciclos infinitos en la lista tabú
+    RHO = fabs(1 - RHO); 
 
     // Mediante un conjunto de hormigas
     for ( int h = 0; h < hormiga.size(); ++h ) {
-        // Creamos nuestra variable de paro (bandera)
-        bool es_listaTabu_llena = false;
-        short veces_calculado {};
-        float *acumulada = new float[TAM] {0.0f};
+        bool es_listaTabu_llena = false;  // Creamos nuestra variable de paro (bandera)
+        short veces_calculado {}; // Las veces que fue calculada la probabilidad P(i)
+        float *acumulada = new float[TAM] {0.0f}; 
+        int iteraciones_actuales {0}; // Un contador de iteraciones que indica cuándo finalizar, si la lista tabú no es llena, dado a las probabilidades de P(i) [cuando existe parámetros muy altos]
+        int max_iteraciones = TAM * 20; // Seleccionamos un número máximo de iteraciones por evaluar
 
-        // Repite el proceso (buscar una solución) mientras la lista tabú no esté llena
-        while ( !es_listaTabu_llena ) {
+        // Repite el proceso (buscar una solución) mientras la lista tabú no esté llena y, además, verifica si no ha llegado al límite de iteraciones
+        while ( !es_listaTabu_llena  &&  iteraciones_actuales < max_iteraciones )  {
             // Si es la primera vez
             if ( veces_calculado == 0 ) {
                 // Calculamos de manera normal
@@ -502,6 +524,13 @@ void sistema_hormiga(v_hormigas &hormiga, const int TAM, v_nodos &nodo, const sh
             // Generamos un número aleatorio entre el 0 y 1 (no necesariamente 0 y 1) a nuestra ruleta simulado
             float probabilidad_aleatoria = static_cast<float> ( rand() ) / RAND_MAX;
             int elegido = encontrar_intervalo(acumulada, probabilidad_aleatoria, TAM);
+
+            // Si se generó un indice inválido...
+            /*if ( elegido == -1 ) {
+                elegido = TAM - 1; // Forzamos una salida, asignando el último nodo disponible que no esté en la lista tabú
+                //iteraciones_actuales++;
+                //continue;
+            }*/
 
             // Verifica si en la lista tabú no existe una posición, anteriormente visitado
             if ( hormiga[h].listaTabu[elegido] != 1 ) {
@@ -517,11 +546,21 @@ void sistema_hormiga(v_hormigas &hormiga, const int TAM, v_nodos &nodo, const sh
                 calcular_probabilidad_i(hormiga, h, nodo, TAM, acumulada);
             }
             es_listaTabu_llena = es_llena_la_listaTabu(hormiga, TAM, h); 
+            
+            iteraciones_actuales++; // Incrementamos el valor de iteraciones a uno para evitar ciclos inesperados
+
+            //imprimir_probabilidad_i(hormiga, TAM, h); // VISUALIZAMOS QUÉ SUCEDE CON LAS PROBABILIDADES
+
+        } // Fin ciclo WHILE-DO
+
+        // Si la lista tabú nunca llegó a completarse correctamente
+        if ( iteraciones_actuales >= max_iteraciones ) { // entonces, llegó al límite de iteraciones
+            antSystem << "ADVERTENCIA: Se alcanzó el límite máximo de iteraciones en busca de nodos 'no visitados'.\n";
         }
 
-        delete [] acumulada;
+        delete [] acumulada; // Reitera la acumulada (para obtener nuevos valores)
         antSystem << "\n";
-
+        
         // Muestra al usuario las soluciones de cada hormiga
         imprimir_solucion_hormiga(hormiga, h, TAM); 
         // Calcula la función objetivo de la hormiga "h"
@@ -530,8 +569,8 @@ void sistema_hormiga(v_hormigas &hormiga, const int TAM, v_nodos &nodo, const sh
         mostrar_funciones_objetivo(hormiga, h); 
 
         antSystem << "\t\tProceso de Hormiga " << h + 1 << ": COMPLETADO.\n";
-        //this_thread::sleep_for(chrono::seconds(6));
-    } 
+
+    } // Fin ciclo FOR (recorrido final de las hormigas)
 
     // Una vez que las hormigas hayan terminado, actualizamos su feromona 
     actualizar_feromona(TAM, RHO); // Inicializa el "estado de evaporación"
@@ -869,7 +908,7 @@ void funcion_objetivo(v_hormigas &hormiga, const int id_hormiga, const int NODOS
     // Construir el número de componentes y sus nodos disponibles (respecto a la representación de la red)
     componentes_de_la_red(hormiga, id_hormiga, opcion);
     // Mostramos el número de componentes creados
-    mostrar_componentes(hormiga, id_hormiga);
+    //mostrar_componentes(hormiga, id_hormiga);
 
     /*
     CUARTO PASO: 
@@ -906,7 +945,7 @@ void funcion_objetivo(v_hormigas &hormiga, const int id_hormiga, const int NODOS
     // Calcula el porcentaje de nodos cubiertos en dos conjuntos, respecto a los nodos disponibles
     porcentaje_valido = (static_cast<float>( cardinalidad_A + cardinalidad_B ) / nodos_totales) * 100;
 
-    antSystem << "|S| = " << cardinalidad_S << "\n";
+    antSystem << "\n|S| = " << cardinalidad_S << "\n";
     antSystem << "|A| = " << cardinalidad_A << "\n";
     antSystem << "|B| = " << cardinalidad_B << "\n";
     antSystem << "- Nodos Totales Válido: " << porcentaje_valido << "\n";
@@ -935,7 +974,6 @@ void funcion_objetivo(v_hormigas &hormiga, const int id_hormiga, const int NODOS
         cardinalidad_B = NODOS_DE_LA_RED + cardinalidad_S; // Penalizamos y nos quedamos con la suma de "n" nodos más el costo de la función objetivo (|S|)
         hormiga[id_hormiga].FO = cardinalidad_B; // "Maximización"
     }
-    //cout << "\n";
 
 } // Fin de la función "funcion_objetivo"
 

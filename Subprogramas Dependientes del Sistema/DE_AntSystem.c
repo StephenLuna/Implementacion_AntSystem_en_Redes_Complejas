@@ -60,6 +60,7 @@ double evaluar(Individuo ind){
     if (!fp) return 1e9; //si falla, devolver un valor grande (mala solución)
     double robustez;
     fscanf(fp, "%lf", &robustez);
+    //printf("\nROBUSTEZ: %lf\n", robustez);
     fclose(fp);
     return robustez; //asumimos  que el programa devuelve una métrica de robustez (la fo)
 }
@@ -105,7 +106,59 @@ void evolucion_diferencial() {
             if ((rand() / (double)RAND_MAX) < CR) trial.alpha = poblacion[a].alpha + F * (poblacion[b].alpha - poblacion[c].alpha);
             if ((rand() / (double)RAND_MAX) < CR) trial.beta = poblacion[a].beta + F * (poblacion[b].beta - poblacion[c].beta);
             if ((rand() / (double)RAND_MAX) < CR) trial.num_hormigas = (int)(poblacion[a].num_hormigas + F * (poblacion[b].num_hormigas - poblacion[c].num_hormigas));
-         
+            
+            /*printf("\nITERACIONES: %d\n", trial.iteraciones);
+            printf("\nRHO: %lf", trial.rho);
+            printf("\nALPHA: %lf\n", trial.alpha);
+            printf("\nBETA: %lf\n", trial.beta);
+            printf("\nHORMIGAS: %d\n", trial.num_hormigas);*/
+
+            // Implementamos restricciones específicas con el propósito de evitar valores "excesivamente" elevados
+            // que puedan derivar en configuraciones capaces de generar ciclos internos descontrolados.
+            // En el presente caso, dichas restricciones se aplican a feromonas que podrían presentar
+            // problemas de incompatibilididad.
+            // Por tanto, si el valor aleatorio ha llegado al límite, restamos con el valor máximo (y así obtenemos, finalmente, una métrica válida)
+
+            if ( trial.iteraciones < MIN_ITER ) {
+                trial.iteraciones = MIN_ITER;
+            }
+            else if ( trial.iteraciones > MAX_ITER ) {
+                int nueva_iteracion = trial.iteraciones - MAX_ITER; 
+                trial.iteraciones = MAX_ITER - nueva_iteracion; 
+            }
+
+            if ( trial.rho < MIN_RHO ) {
+                trial.rho = MIN_RHO;
+            }
+            else if ( trial.rho > MAX_RHO ) {
+                double nueva_rho = trial.rho - MAX_RHO;
+                trial.rho = MAX_RHO - nueva_rho;
+            }
+
+            if ( trial.alpha < MIN_ALPHA ) {
+                trial.alpha= MIN_ALPHA;
+            }
+            else if ( trial.alpha > MAX_ALPHA ) {
+                double nueva_alpha = trial.alpha - MAX_ALPHA;
+                trial.alpha = MAX_ALPHA - nueva_alpha;
+            }
+
+            if ( trial.beta < MIN_BETA ) {
+                trial.beta = MIN_BETA;
+            }
+            else if ( trial.beta > MAX_BETA ) {
+                double nueva_beta = trial.beta - MAX_BETA;
+                trial.beta = MAX_BETA - nueva_beta;
+            }
+
+            if ( trial.num_hormigas < MIN_HORMIGAS ) {
+                trial.num_hormigas = MIN_HORMIGAS;
+            }
+            else if ( trial.num_hormigas > MAX_HORMIGAS ) {
+                int nuevas_hormigas = trial.num_hormigas - MAX_HORMIGAS;
+                trial.num_hormigas = MAX_HORMIGAS - nuevas_hormigas;
+            }
+
             //reemplazamos si el nuevo individuo es mejor
             double fitness_trial = evaluar(trial);
             double fitness_actual = evaluar(poblacion[i]);
@@ -129,7 +182,7 @@ void evolucion_diferencial() {
 }
 
 int main() {
-    printf("Iniciando optimización con Evolución Diferencial...\n");
+    printf("\nIniciando optimización con Evolución Diferencial...\n");
     evolucion_diferencial();
     return 0;
 }
