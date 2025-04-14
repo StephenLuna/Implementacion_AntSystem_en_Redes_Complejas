@@ -908,7 +908,7 @@ void funcion_objetivo(v_hormigas &hormiga, const int id_hormiga, const int NODOS
     // Construir el número de componentes y sus nodos disponibles (respecto a la representación de la red)
     componentes_de_la_red(hormiga, id_hormiga, opcion);
     // Mostramos el número de componentes creados
-    //mostrar_componentes(hormiga, id_hormiga);
+    mostrar_componentes(hormiga, id_hormiga);
 
     /*
     CUARTO PASO: 
