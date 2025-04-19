@@ -83,6 +83,13 @@ short leer_entrada(int argc, char *argv[], string &archivo) {
     archivo = argv[6];
     option = atoi(argv[7]);
 
+    // Si el usuario no seleccionó correctamente la opción del grafo
+    // en este caso, 0 (matriz) ó 1 (lista)
+    if ( option != 0 && option != 1 ) {
+        option = -1; // Evaluamos como valor no válido para finalizar el programa y envíamos mensaje de advertencia o error
+        cout << "\a\nLa opción de grafo seleccionada no es válida. Por favor, elige '1' si deseas utilizar una lista de adyacencia o '0' si prefieres una matriz de adyacencia.\n"; 
+    }
+
     return option;
 } // Fin de la función leer_entrada
 
@@ -181,7 +188,7 @@ void representacion_matriz(string archivo, int tam_del_grafo) {
              << " ANT SYSTEM. Se recomienda revisar si el directorio es correcto.\n\n";
         exit(EXIT_FAILURE); // Advierte al usuario y termina el programa inmediatamente
     }
-
+   
     antSystem << "\n\t>> RED ORIGINAL <<\n";
     imprimir_matriz_adyacencia(matriz); // Muestra al usuario el grafo original
     
@@ -194,7 +201,6 @@ void representacion_matriz(string archivo, int tam_del_grafo) {
     // Para cada número del grado de un nodo, se calcula su probabilidad (promedio)
     double probabilidad = probabilidad_grado(nodo, grado);
     antSystem << "\nPROBABILIDAD: " << probabilidad << "\n\n";
-
     // Damos inicio con la resolución a nuestro Problema de Optimización: Analizar la Robustez de la Red
 
     tam_del_grafo = matriz.size(); // Asigna el tamaño general del grafo
@@ -429,12 +435,13 @@ void aplicar_feromona_t(const int TAM_RED, v_nodos &nodo, const short opcion) {
 
 // A través de la fórmula, calcula la probabilidad de P(i) para cada hormiga 
 void calcular_probabilidad_i(v_hormigas &hormiga, int id_hormiga, const v_nodos &nodo, const int TAM_PROBA, float *acumulada) {
+    double SUMATORIA = Sumatoria_tabu_heuristico(nodo, hormiga[id_hormiga].listaTabu); // El denominador de la sumatoria nunca cambia para un elemento dado
+                                                                                       // no obstante, genera diferentes valores según al nodo que fue visitado (i.e. la lista tabú)
 
     for ( int elemento = 0; elemento < TAM_PROBA; ++elemento ) {
         double tabu = pow(nodo[elemento].grado, BETA); 
         double heuristico = pow(arregloFeromona[elemento], ALPHA);
-        double SUMATORIA = Sumatoria_tabu_heuristico(nodo, hormiga[id_hormiga].listaTabu);
-
+        
         // Si en la lista tabú no tenemos ninguna posición visitada
         if ( hormiga[id_hormiga].listaTabu[elemento] != 1 ) {
             // Calcula probabilididad, que matemáticamente es:
@@ -456,24 +463,28 @@ void calcular_probabilidad_i(v_hormigas &hormiga, int id_hormiga, const v_nodos 
             acumulada[elemento] = acumulada[elemento - 1] + hormiga[id_hormiga].probabilidad[elemento];
         }
 
-        // Normalizamos la distribución acumulada para que el último valor sea 1.0
-        float total = acumulada[TAM_PROBA - 1]; // Obtiene el total (último valor del arreglo)
-                                                // cuya suma refleja todas las probabilidades
-                                                // para aquellos nodos que aún no han sido visitados
+    } // Fin del ciclo FOR (1er ciclo para la acumulación [i.e. calcular probabilidades y construir el acumulado sin ninguna 'normalización parcial'])
 
-        // Si el total (la suma) es un entero positivo                                                
-        if ( total > 0 ) {
-            // Divide cada valor o suma parcial entre la suma total (la acumulada)
-            for ( int i = 0; i < TAM_PROBA; ++i ) {
-                acumulada[i] /= total; // Así, la última posición (que es la suma) tendrá la suma válida de las probabilidades (i.e. "1.0")
-            }
+    // Normalizamos la distribución acumulada para que el último valor sea 1.0 (Desde luego, teniendo en cuenta si es necesario o no)
+    float total = acumulada[TAM_PROBA - 1]; // Obtiene el total (último valor del arreglo, la cual, se supone que debe dar '1.0')
+                                            // cuya suma refleja todas las probabilidades para aquellos nodos que aún no han sido visitados
+
+    // Si el total (la suma) es un entero positivo
+    // y, si la suma de las probabilidades no es 1.0, comparando a través de un umbral muy pequeño (un valor precisado)                                          
+    if ( total > 0 && fabs(total - 1.0f) > 1e-6 ) {
+        // Divide cada valor o suma parcial entre la suma total (la acumulada)
+        for ( int i = 0; i < TAM_PROBA; ++i ) {
+            acumulada[i] /= total; // Así, la última posición (que es la suma) tendrá la suma válida de las probabilidades (i.e. "1.0")
         }
-
-        /* A través de esta nueva implementación, evitamos que los intervalos estén fuera de rango
-        cuando se generan números aleatorios entre 0 y 1, de tal forma que los indices no sean, 
-        y no debería serlo, -1 */
-
     }
+
+    /* 
+    A través de esta nueva implementación, evitamos que los intervalos estén fuera de rango
+    cuando se generan números aleatorios entre 0 y 1, de tal forma que los indices no sean, 
+    y no debería serlo, -1 (SIN EMBARGO, AÚN CUANDO SUCEDE ESTO, NO ES SUFICIENTE [Ver función 'sistema_hormiga()'])
+    */
+
+    //for ( int i = 0; i < TAM_PROBA; ++i ) cout << acumulada[i] << ", "; // comprobamos si la acumulada tiene un orden creciente y ordenado (para así, obtener los índices correctos al buscar intervalos)
 
 } // Fin de la función calcular_probabilidad_i
 
@@ -526,11 +537,11 @@ void sistema_hormiga(v_hormigas &hormiga, const int TAM, v_nodos &nodo, const sh
             int elegido = encontrar_intervalo(acumulada, probabilidad_aleatoria, TAM);
 
             // Si se generó un indice inválido...
-            /*if ( elegido == -1 ) {
+            if ( elegido == -1 ) {
                 elegido = TAM - 1; // Forzamos una salida, asignando el último nodo disponible que no esté en la lista tabú
                 //iteraciones_actuales++;
                 //continue;
-            }*/
+            }
 
             // Verifica si en la lista tabú no existe una posición, anteriormente visitado
             if ( hormiga[h].listaTabu[elegido] != 1 ) {
@@ -555,7 +566,7 @@ void sistema_hormiga(v_hormigas &hormiga, const int TAM, v_nodos &nodo, const sh
 
         // Si la lista tabú nunca llegó a completarse correctamente
         if ( iteraciones_actuales >= max_iteraciones ) { // entonces, llegó al límite de iteraciones
-            antSystem << "ADVERTENCIA: Se alcanzó el límite máximo de iteraciones en busca de nodos 'no visitados'.\n";
+            antSystem << "\nADVERTENCIA: Se alcanzó el límite máximo de iteraciones en busca de nodos 'no visitados'.\n";
         }
 
         delete [] acumulada; // Reitera la acumulada (para obtener nuevos valores)
@@ -597,11 +608,11 @@ void sistema_hormiga(v_hormigas &hormiga, const int TAM, v_nodos &nodo, const sh
 
 // Dado un número aleatorio, busca un número aproximado (intervalo correspondiente)
 int encontrar_intervalo(float *acumulada, const float NUM_ALEATORIO, const int TAM) {
-    int indice_de_solucion {-1};
+    int indice_de_solucion {-1}; // Establece un índice no válido si el rango no está definido con el número aleatorio
 
     for ( int elemento = 0; elemento < TAM; ++elemento ) {
         // Si el número aleatorio (heurístico) está dentro del rango
-        if ( NUM_ALEATORIO < acumulada[elemento] ) {
+        if ( NUM_ALEATORIO <= acumulada[elemento] ) { 
             indice_de_solucion = elemento; // Guardamos la posición y visitamos
             break;
         }
@@ -636,7 +647,7 @@ void imprimir_probabilidad_i(const v_hormigas &hormiga, const int TAM_PROBA, con
 
 // Muestra el conjunto solución de cada hormiga
 void imprimir_solucion_hormiga(const v_hormigas &hormiga, const int id_hormiga, const int TAM) {
-    antSystem << "La Hormiga "<< id_hormiga + 1 << " ha desarrollado una *solución*\n\n";
+    antSystem << "La 'Hormiga "<< id_hormiga + 1 << "' ha desarrollado una *solución*\n\n";
     antSystem << "[ ";
 
     for ( int indice = 0; indice < TAM; ++indice ) {
@@ -869,12 +880,12 @@ void mostrar_componentes(const v_hormigas &hormiga, const int id_hormiga) {
         if ( num_componente == 0 )
             antSystem << "* Conjunto Separador |S|: ";
         else
-            antSystem << "- Componente " << num_componente << ": ";
+            antSystem << "\n\t- Componente " << num_componente << ": ";
 
         for ( int nodo : componente ) {
             antSystem << nodo << " ";
         }
-        antSystem << " Cardinalidad = " << componente.size() << "\n";
+        antSystem << "<--> Cardinalidad = " << componente.size() << "\n";
         ++num_componente;
     }
     antSystem << "\n";
@@ -945,7 +956,7 @@ void funcion_objetivo(v_hormigas &hormiga, const int id_hormiga, const int NODOS
     // Calcula el porcentaje de nodos cubiertos en dos conjuntos, respecto a los nodos disponibles
     porcentaje_valido = (static_cast<float>( cardinalidad_A + cardinalidad_B ) / nodos_totales) * 100;
 
-    antSystem << "\n|S| = " << cardinalidad_S << "\n";
+    antSystem << "|S| = " << cardinalidad_S << "\n";
     antSystem << "|A| = " << cardinalidad_A << "\n";
     antSystem << "|B| = " << cardinalidad_B << "\n";
     antSystem << "- Nodos Totales Válido: " << porcentaje_valido << "\n";
@@ -996,8 +1007,16 @@ void mostrar_funciones_objetivo(const v_hormigas &hormiga, const int id_hormiga)
 } // Fin de la función mostrar_funciones_objetivo
 
 // Una sencilla función que sólo muestra el mejor y el peor costo de una función objetivo
-void mostrar_MejorPeor_funcionObjetivo() {
-    cout << "\t- Mejor Función Objetivo: " << mejor_costo << "\n";
-    cout << "\t- Peor Función Objetivo: " << peor_costo << "\n";
+void mostrar_MejorPeor_funcionObjetivo(bool utilizo_algoritmoED) {
+
+    // Verifica si el usuario eligió implementar el programa a través del algoritmo evolutivo
+    if ( utilizo_algoritmoED ) {
+        cout << mejor_costo; // Si lo fue, entonces, registramos el valor de la F.O. (como métrica de la robustez). En este caso, el mejor costo
+    }
+    else { // Caso contrario, eligió hacerlo manual y, por tanto, imprimimos de manera completa todos los resultados
+        cout << "\t- Mejor Función Objetivo: " << mejor_costo << "\n";
+        cout << "\t- Peor Función Objetivo: " << peor_costo << "\n";
+    }
+
 } // Fin de la función mostrar_MejorPeor_funcionObjetivo
 

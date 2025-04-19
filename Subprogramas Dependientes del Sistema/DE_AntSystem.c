@@ -2,7 +2,7 @@
 /*
     **Autor Principal:** Edwin Montes Orozco.
     **Modificaciones Realizadas por:** Stephen Luna Ramírez.
-    **Fecha:** 15 y 16 de marzo de 2025.
+    **Fecha:** 15 y 16 de marzo, 19 de abril de 2025.
     **Instructor:** Edwin Montes Orozco.
     **Asignatura:** Proyecto Terminal (Tesis).
 
@@ -60,7 +60,8 @@ double evaluar(Individuo ind){
     if (!fp) return 1e9; //si falla, devolver un valor grande (mala solución)
     double robustez;
     fscanf(fp, "%lf", &robustez);
-    //printf("\nROBUSTEZ: %lf\n", robustez);
+    //printf("\nROBUSTEZ: %lf\n", robustez); <-- AL PARECER EL MISMO "ANT SYSTEM" DEBE OFRECER ALGÚN VALOR PARA OBTENER DICHOS PARÁMETROS DE CONTROL CALIBRADOS 
+    // (Por tanto, se realizarán los cambios correspondientes)
     fclose(fp);
     return robustez; //asumimos  que el programa devuelve una métrica de robustez (la fo)
 }
@@ -173,12 +174,12 @@ void evolucion_diferencial() {
     }
     
     //mostramos la mejor configuración encontrada
-    printf("Mejores parámetros:\n");
-    printf("Iteraciones: %d\n", mejor.iteraciones);
-    printf("Evaporación (rho): %lf\n", mejor.rho);
-    printf("Alpha: %lf\n", mejor.alpha);
-    printf("Beta: %lf\n", mejor.beta);
-    printf("Número de hormigas: %d\n", mejor.num_hormigas);
+    printf("\nMejores parámetros:\n");
+    printf("\t- Iteraciones: %d\n", mejor.iteraciones);
+    printf("\t- Evaporación (rho): %lf\n", mejor.rho);
+    printf("\t- Alpha: %lf\n", mejor.alpha);
+    printf("\t- Beta: %lf\n", mejor.beta);
+    printf("\t- Número de hormigas: %d\n", mejor.num_hormigas);
 }
 
 int main() {
