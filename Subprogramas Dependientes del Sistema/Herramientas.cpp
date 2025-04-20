@@ -88,6 +88,7 @@ short leer_entrada(int argc, char *argv[], string &archivo) {
     if ( option != 0 && option != 1 ) {
         option = -1; // Evaluamos como valor no válido para finalizar el programa y envíamos mensaje de advertencia o error
         cout << "\a\nLa opción de grafo seleccionada no es válida. Por favor, elige '1' si deseas utilizar una lista de adyacencia o '0' si prefieres una matriz de adyacencia.\n"; 
+        this_thread::sleep_for(chrono::seconds(12)); // No obstante, ofrecemos tiempo para leer el mensaje
     }
 
     return option;
@@ -102,6 +103,14 @@ void leer_archivo(const string& nombre_archivo, const short tipo_grafo) {
     int num_nodos {};
     int num_enlaces {};
     int enlaces_repetidos {}; 
+    int contador_enlaces {}; // IMPORTANTE: Aunque se procesen parejas de nodos (u, v), es fundamental considerar las conexiones entre ellos.
+                             // Estas determinan si se ha alcanzado un límite o si aún es posible establecer nuevas conexiones.
+                             // Si no se toma en cuenta este criterio, pueden generarse nodos aislados, lo que afecta la integridad de la estructura de datos
+                             // (ya sea matriz de adyacencia o lista de adyacencia).
+                             // Esto provoca que el algoritmo visite nodos sin conexiones, generando ineficiencia en el uso de memoria,
+                             // ya que no se ha evaluado adecuaduamente la cantidad de enlaces existentes entre cada nodo.
+                             // Para evitar estos problemas, se implementa un contador que determina el punto en el que se debe leer o almacenar la estructura,
+                             // optimizando el diseño y la creación de la red.
 
     // Si al leer el archivo existe error
     if ( archivo.fail() ) {
@@ -138,7 +147,12 @@ void leer_archivo(const string& nombre_archivo, const short tipo_grafo) {
             // Dado que los nodos inician en 1 a (n), es necesario convertirlo a indices de 0 a (n - 1)            
             nodo_origen--;
             nodo_destino--;
+
+            contador_enlaces++; // Incrementa a uno al contador de enlaces hasta llegar el límite de ella
         }
+
+        // Si el contador de enlaces ha llegado al valor definido de enlaces (máximo valor)
+        if ( contador_enlaces >= num_enlaces ) break; // finaliza para continuar con su ejecución (i.e. los cálculos necesarios para aplicar el 'Ant System')
 
         // Si alguno de los nodos (u y v) no están dentro del rango esperado
         if ( nodo_origen >= num_nodos || nodo_destino >= num_nodos ) {
@@ -470,7 +484,7 @@ void calcular_probabilidad_i(v_hormigas &hormiga, int id_hormiga, const v_nodos 
                                             // cuya suma refleja todas las probabilidades para aquellos nodos que aún no han sido visitados
 
     // Si el total (la suma) es un entero positivo
-    // y, si la suma de las probabilidades no es 1.0, comparando a través de un umbral muy pequeño (un valor precisado)                                          
+    // y, si la suma de las probabilidades no es 1.0, compara a través de un umbral muy pequeño (un valor precisado)                                          
     if ( total > 0 && fabs(total - 1.0f) > 1e-6 ) {
         // Divide cada valor o suma parcial entre la suma total (la acumulada)
         for ( int i = 0; i < TAM_PROBA; ++i ) {
@@ -566,7 +580,7 @@ void sistema_hormiga(v_hormigas &hormiga, const int TAM, v_nodos &nodo, const sh
 
         // Si la lista tabú nunca llegó a completarse correctamente
         if ( iteraciones_actuales >= max_iteraciones ) { // entonces, llegó al límite de iteraciones
-            antSystem << "\nADVERTENCIA: Se alcanzó el límite máximo de iteraciones en busca de nodos 'no visitados'.\n";
+            antSystem << "\nADVERTENCIA: Se alcanzado el límite máximo de iteraciones en la busqueda de nodos 'no visitados' utilizando el registro de la \"lista tabú\".\n";
         }
 
         delete [] acumulada; // Reitera la acumulada (para obtener nuevos valores)
