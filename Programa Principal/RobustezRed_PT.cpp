@@ -25,10 +25,8 @@ int main (int argc, char *argv[]) {
     std::string archivo {""};
     // El nombre del archivo que genera el algoritmo evolutivo para establecer la métrica correcta de robustez
     std::ifstream archivo_ED ("resultado.txt");
-    // Solicita y recibe la opción de representación del grafo como entrada
+    // Solicita y recibe la opción del grafo como entrada
     short respuesta_usuario = leer_entrada(argc, argv, archivo);
-    // El tamaño general del grafo
-    int tam_del_grafo {};
     // Generador (Semilla) de números aleatorios
     srand(time(nullptr)); 
 
@@ -52,14 +50,10 @@ int main (int argc, char *argv[]) {
         std:: cout << "\n\t- Implementación y Ejecución del Algoritmo ANT SYSTEM - \n\n";
     }
 
-    // Si la opción es cero
-    if ( respuesta_usuario == 0 ) { 
-        representacion_matriz(archivo, tam_del_grafo); // Representa la red como MATRIZ DE ADYACENCIA
-    } 
-    else // Otro caso, si la opción es uno
-        if ( respuesta_usuario == 1 ) {
-            representacion_lista(archivo, tam_del_grafo); // Representa la red como LISTA DE ADYACENCIA
-        } 
+    // Crea la red (siendo el componente gigante), en función de su representación.
+    // Para este caso, sólo existen dos posibles opciones para representar un grafo:
+    // [0] MATRIZ de ADYACENCIA y [1] LISTA de ADYACENCIA 
+    crear_red_compleja(archivo, respuesta_usuario); 
     
     // Del mismo modo, verificamos si el usuario seleccionó implementarlo a través del algoritmo evolutivo o manualmente
     if ( archivo_ED.fail() ) {
@@ -73,8 +67,11 @@ int main (int argc, char *argv[]) {
         std:: cout << "|------------------------------------------------------------------|\n\n";
     }
     else {
-        mostrar_MejorPeor_funcionObjetivo(true); // Si fue con el algoritmo E.D., entonces, sólo generará un valor que corresponde a la métrica de la robustez y, así, generar los parámetros de control
+        // Si fue con el algoritmo E.D., entonces, sólo generará un valor que corresponde a la 
+        // métrica de la robustez y, así, generar los parámetros de control
+        mostrar_MejorPeor_funcionObjetivo(true); 
     }
 
     return 0;
+    
 } // Fin de la función main

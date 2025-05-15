@@ -33,9 +33,7 @@ using v_hormigas = std::vector<Datos_hormiga>;
 // Entrada de Datos
 short leer_entrada(int argc, char *argv[], std::string &archivo); 
 void leer_archivo(const std::string& nombre_archivo, const short tipo_grafo);
-void representacion_matriz(std::string archivo, int tam_del_grafo);
-void representacion_lista(std::string archivo, int tam_del_grafo);
-
+void crear_red_compleja(std::string archivo, const short tipo_grafo);
 // ** LISTA **
 void imprimir_lista_adyacencia(const std:: vector<std::vector<int>> &lista);
 // *** MATRIZ *** 

@@ -12,7 +12,7 @@
 #include <cstdlib> 
 // Operaciones o funciones matemáticos
 #include <cmath>
-// Estructura de datos tipo cola
+// Estructura de datos tipo cola, listas, vectores, etc.
 #include <deque>
 // Biblioteca "thread" para pausar el programa mediante un intervalo de segundos
 #include <thread>
@@ -32,6 +32,14 @@ vector<vector<int>> lista {};
 ofstream antSystem("valores_AntSystem.txt");
 float mejor_costo = 99999.99999f; // El mejor costo de la función objetivo, dado por un número de hormigas
 float peor_costo = 0.0f; // El peor costo de la función objetivo mediante el número de hormigas
+
+// Determina si es necesario mostrar al usuario la totalidad de la ejecución del programa
+// considerando que la cantidad de nodos generados no supere un límite predefinido
+bool imprimir = false; 
+// El límite establecido para el número de nodos determina la necesidad de registrar
+// y presentar todos los resultados al usuario, incluyendo su creación, grado,
+// desconexión, entre otros, mediante el archivo generado
+#define MAX_NODOS 5500 
 
 // Parámetros que serán ajustados a través de un algoritmo evolutivo,
 // especificamente Evolución Diferencial, y representados como 
@@ -190,57 +198,14 @@ void leer_archivo(const string& nombre_archivo, const short tipo_grafo) {
 
 } // Fin de la función leer_archivo
 
-// Opción 0: Representación del grafo mediante una MATRIZ
-void representacion_matriz(string archivo, int tam_del_grafo) {
-    leer_archivo(archivo, 0); // Lee entrada y crea el grafo según la representación correspondiente
-    
-    // Si al crear el archivo para obtener resultados
-    // existe algún fallo o error
-    if ( !antSystem ) {
-        cout << "\nADVERTENCIA: Se ha detectado un posible error durante la creación y apertura del archivo"
-             << " que contiene el conjunto de datos correspondientes a los resultados generados por el algoritmo"
-             << " ANT SYSTEM. Se recomienda revisar si el directorio es correcto.\n\n";
-        exit(EXIT_FAILURE); // Advierte al usuario y termina el programa inmediatamente
-    }
-   
-    antSystem << "\n\t>> RED ORIGINAL <<\n";
-    imprimir_matriz_adyacencia(matriz); // Muestra al usuario el grafo original
-    
-    // Iniciamos con la implementación real 
-            
-    v_nodos nodo; // Arreglo tipo "vector" que reprensenta los nodos de la red y sus datos
-    int grado = calcular_grado_Matriz(nodo); // Dado un componente de la red, se calcula el número total del grado 
-   
-    antSystem << "\tTOTAL DEL GRADO: " << grado << "\n\n";
-    // Para cada número del grado de un nodo, se calcula su probabilidad (promedio)
-    double probabilidad = probabilidad_grado(nodo, grado);
-    antSystem << "\nPROBABILIDAD: " << probabilidad << "\n\n";
-    // Damos inicio con la resolución a nuestro Problema de Optimización: Analizar la Robustez de la Red
+// Mediante la lectura del archivo (instancia del problema) y la opción del grafo (representación)
+// crea una red correspondiente (que puede ser representada por una lista o matriz de adyacencia)
+void crear_red_compleja(string archivo, const short tipo_grafo) {
+    leer_archivo(archivo, tipo_grafo); // Lee entrada y crea la red según su representación
+    int tam_del_grafo {}; // El tamaño general de la red (componente principal)
 
-    tam_del_grafo = matriz.size(); // Asigna el tamaño general del grafo
-    creacion_de_feromona(tam_del_grafo); // Inicialmente, toda hormiga tendrá su conjunto de feromona en 1's
-    antSystem << "Feromona [*ACTUAL*]: | ";
-    mostrar_feromona(tam_del_grafo); // Muestra a pantalla la feromona actual
-
-    antSystem << "\nGenerando Hormigas. Por favor, espere...\n";
-    // Aplicamos, a través de ciertas fórmulas, el método hormiga en una iteración (t)
-    aplicar_feromona_t(tam_del_grafo, nodo, 0); // 0 corresponde la opción de la MATRIZ
-
-    // Fase de Finalización
-    // liberamos memoria a cada estructuras de datos
-    matriz.clear();
-    nodo.erase(nodo.begin(), nodo.end());
-    delete [] arregloFeromona;
-    antSystem.close(); // Finalmente, cerramos el archivo de resultados para evitar errores de escritura
-
-} // Fin de la función representacion_matriz
-
-// Opción 1: Representación del grafo mediante una LISTA
-void representacion_lista(string archivo, int tam_del_grafo) {
-    leer_archivo(archivo, 1); // Pide entrada y crea el grafo como una lista de adyacencia
-    
-    // Si al crear el archivo para obtener resultados
-    // existe algún fallo o error
+    // Si al crear el archivo para mostrar resultados,
+    // propios del Ant System, existe algún fallo o error posible
     if ( !antSystem ) {
         cout << "\nADVERTENCIA: Se ha detectado un posible error durante la creación y apertura del archivo"
              << " que contiene el conjunto de datos correspondientes a los resultados generados por el algoritmo"
@@ -248,37 +213,58 @@ void representacion_lista(string archivo, int tam_del_grafo) {
         exit(EXIT_FAILURE); // Advierte al usuario y termina el programa inmediatamente
     }
 
-    antSystem << "\n\t[ Red Original ]\n";
-    imprimir_lista_adyacencia(lista); // Muestra la red original
-
-    // Iniciamos la implementaciòn real del problema
-
-    v_nodos nodo; // Arreglo tipo "vector" que reprensenta los nodos de la red y sus datos
-    int grado = calcular_grado_Lista(nodo); // Dado al componente de la red, se calcula el número total del grado 
-    antSystem << "\nTOTAL DEL GRADO: " << grado << "\n\n";
-
-    // Para cada número del grado de un nodo, se calcula su probabilidad (promedio)
-    double probabilidad = probabilidad_grado(nodo, grado);
-    antSystem << "\nPROBABILIDAD: " << probabilidad << "\n";
-
-    // Iniciamos la resolución de nuestro Problema de Optimización: un análisis de una Red Robusta
-
-    tam_del_grafo = lista.size(); // Asigna el tamaño general del grafo (componente de la red)
-    creacion_de_feromona(tam_del_grafo); // Inicialmente, toda hormiga tendrá su conjunto de feromona en 1's
-    antSystem << "Feromona [*ACTUAL*]: | ";
-    mostrar_feromona(tam_del_grafo); // Muestra la feromona actual, antes de hacer cálculos
+    // Según la opción de la red, determina y asigna su tamaño
+    if ( tipo_grafo == 0 ) tam_del_grafo = matriz.size();
+    else tam_del_grafo = lista.size();
     
-    antSystem << "\nCreando Hormigas, por favor, espere...\n";
-    // Aplicamos, a través de ciertas fórmulas, el método hormiga en una iteración (t)
-    aplicar_feromona_t(tam_del_grafo, nodo, 1); // 1 corresponde la opción de la LISTA
+    // Si el tamaño del grafo no excede al número máximo de nodos
+    if ( tam_del_grafo <= MAX_NODOS ) {
+        imprimir = true; // Es posible imprimir toda la implementación del programa (i.e. cómo fue llevado a cabo todo)
 
-    // FINAL: Liberar memoria para cada estructura de datos disponibles
-    lista.clear();
-    nodo.erase(nodo.begin(), nodo.end());
+        // Muestra al usuario la construcción o diseño del grafo original
+        // en función a su representación (lista o matriz)
+        antSystem << "\n\t**Red Original**\n";
+        if ( tipo_grafo == 0) imprimir_matriz_adyacencia(matriz);
+        else imprimir_lista_adyacencia(lista);
+    }
+
+    /* 1. Implementación Real del Problema */
+
+    v_nodos nodo; // Estructura de datos tipo "vector" que representa los nodos de la red y sus datos adicionales
+    int grado {}; // Dado un componente de la red, se calcula el número total de grado (i.e. número de conexiones)
+
+    if ( tipo_grafo == 0 ) grado = calcular_grado_Matriz(nodo);
+    else grado = calcular_grado_Lista(nodo);
+
+    antSystem << "\n\t> Número **total** de grado: " << grado << "\n\n";
+    double probabilidad = probabilidad_grado(nodo, grado); // Para cada número de grado de un nodo, se calcula su probabilidad (promedio)
+    antSystem << "\n**Probabilidad:** " << probabilidad << "\n\n";
+
+    /* 2. Resolución al Problema de Optimización: Analizar la **Robustez** de la Red */
+
+    creacion_de_feromona(tam_del_grafo); // Inicialmente, toda 'hormiga' obtendrá un conjunto de feromona en 1's
+
+    // Si es posible imprimir todo el proceso del Ant System
+    if ( imprimir ) {
+        // Escribe (muestra) en el archivo correspondiente la feromona actual hacia el usuario
+        antSystem << "Feromona **Actual**\n| ";
+        mostrar_feromona(tam_del_grafo);
+        antSystem << "\nGenerando Hormigas. Por favor, espere...\n";
+    }
+    // Aplicamos, a través de ciertas fórmulas, el 'método hormiga' en una iteración (t),
+    // según la representación de la red ([0]: matriz y [1]: lista)
+    aplicar_feromona_t(tam_del_grafo, nodo, tipo_grafo); 
+
+    /* 3. Finalización (objetivo cumplido): Liberar memoria para cada estructura de datos 
+    para evitar fugas inesperadas en la memoria */
+
+    if (tipo_grafo == 0) matriz.clear();
+    else lista.clear();
+    nodo.clear();
     delete [] arregloFeromona;
     antSystem.close();
 
-} // Fin de la función representacion_lista
+} // Fin de la función crear_red_compleja
 
 // Muestra la red como una lista de adyacencia
 void imprimir_lista_adyacencia(const vector<vector<int>> &lista) {
@@ -360,10 +346,12 @@ double probabilidad_grado(const v_nodos& nodo, const int grado) {
 
     // Dado al número de nodos o vértices
     for ( const auto &dato_nodo : nodo ) {
-        // Muestra el nodo correspondiente y su número de grado respectivo
-        antSystem << "NODO " << dato_nodo.ID
-                  << "\tNúmero de Grado: " << dato_nodo.grado << "\n";
-        
+        // Verifica si es posible imprimir (mostrar) todo al usuario
+        if ( imprimir ) {
+            // Muestra el nodo correspondiente y su número de grado respectivo
+            antSystem << "NODO [" << dato_nodo.ID << "]"
+                      << "\tNúmero de Grado: " << dato_nodo.grado << "\n";
+        }        
         // Para cada grado de cada vértice, obtenemos su probabilidad, dividiéndolo con el número total de grado
         probabilidad += static_cast<double> (dato_nodo.grado) / grado;
     }
@@ -426,18 +414,20 @@ void actualizar_feromona(const int tam_feromona, const float RHO) {
 
 // Ejecuta el método hormiga a partir de un número de iteraciones (t)
 void aplicar_feromona_t(const int TAM_RED, v_nodos &nodo, const short opcion) {
-    
-    antSystem << "\nParametros Equilibrados Requeridos\n"
-              << "-----------------------------------------------------\n"
-              << "* Número de Hormigas [por crear]: " << m_hormigas
-              << "\n* Número de Iteraciones (t-1): " << num_iteraciones
-              << "\n* Alpha = " << ALPHA
-              << "\n* Beta = " << BETA
-              << "\n* Rho = " << RHO << "\n"
-              << "-----------------------------------------------------\n\n";
-
-    for ( int t = 0; t < num_iteraciones; ++t ) {
-        antSystem << "---Feromona en Iteración t(" << t << ")-->>\n";
+    // Si en realidad es posible imprimir todo lo qué ejecuta o calcula el método 'Ant System'
+    if ( imprimir ) {
+        antSystem << "\nParametros Equilibrados Requeridos\n"
+                  << "-----------------------------------------------------\n"
+                  << "* Número de Hormigas [por crear]: " << m_hormigas
+                  << "\n* Número de Iteraciones (t-1): " << num_iteraciones
+                  << "\n* Alpha = " << ALPHA
+                  << "\n* Beta = " << BETA
+                  << "\n* Rho = " << RHO << "\n"
+                  << "-----------------------------------------------------\n\n";
+    }
+    // Mediante un número de iteración (t)
+    for ( int t = 0; t < num_iteraciones; ++t ) { 
+        antSystem << "Feromona en Iteración t(" << t << ")\n";
 
         v_hormigas hormiga; // Un conjunto de vectores que representa a las hormigas junto con su información adicional
         creacion_de_hormigas(hormiga, TAM_RED, nodo); // Inicializa o reserva memoria, dado al número de hormigas
@@ -452,7 +442,7 @@ void calcular_probabilidad_i(v_hormigas &hormiga, int id_hormiga, const v_nodos 
     double SUMATORIA = Sumatoria_tabu_heuristico(nodo, hormiga[id_hormiga].listaTabu); // El denominador de la sumatoria nunca cambia para un elemento dado
                                                                                        // no obstante, genera diferentes valores según al nodo que fue visitado (i.e. la lista tabú)
 
-    for ( int elemento = 0; elemento < TAM_PROBA; ++elemento ) {
+    for ( int elemento = 0; elemento < TAM_PROBA; ++elemento ) { 
         double tabu = pow(nodo[elemento].grado, BETA); 
         double heuristico = pow(arregloFeromona[elemento], ALPHA);
         
@@ -484,7 +474,7 @@ void calcular_probabilidad_i(v_hormigas &hormiga, int id_hormiga, const v_nodos 
                                             // cuya suma refleja todas las probabilidades para aquellos nodos que aún no han sido visitados
 
     // Si el total (la suma) es un entero positivo
-    // y, si la suma de las probabilidades no es 1.0, compara a través de un umbral muy pequeño (un valor precisado)                                          
+    // y, si la suma de las probabilidades no es 1.0, comparando a través de un umbral muy pequeño (un valor precisado)                                          
     if ( total > 0 && fabs(total - 1.0f) > 1e-6 ) {
         // Divide cada valor o suma parcial entre la suma total (la acumulada)
         for ( int i = 0; i < TAM_PROBA; ++i ) {
@@ -498,7 +488,9 @@ void calcular_probabilidad_i(v_hormigas &hormiga, int id_hormiga, const v_nodos 
     y no debería serlo, -1 (SIN EMBARGO, AÚN CUANDO SUCEDE ESTO, NO ES SUFICIENTE [Ver función 'sistema_hormiga()'])
     */
 
-    //for ( int i = 0; i < TAM_PROBA; ++i ) cout << acumulada[i] << ", "; // comprobamos si la acumulada tiene un orden creciente y ordenado (para así, obtener los índices correctos al buscar intervalos)
+    // comprobamos si la acumulada tiene un orden creciente y ordenado  
+    // (para así, obtener los índices correctos al buscar intervalos)
+    //for ( int i = 0; i < TAM_PROBA; ++i ) cout << acumulada[i] << ", "; 
 
 } // Fin de la función calcular_probabilidad_i
 
@@ -570,8 +562,8 @@ void sistema_hormiga(v_hormigas &hormiga, const int TAM, v_nodos &nodo, const sh
                 // Volvemos a calcular la probabilidad (P(i)), dado que la posición elegida es igual a cero
                 calcular_probabilidad_i(hormiga, h, nodo, TAM, acumulada);
             }
+
             es_listaTabu_llena = es_llena_la_listaTabu(hormiga, TAM, h); 
-            
             iteraciones_actuales++; // Incrementamos el valor de iteraciones a uno para evitar ciclos inesperados
 
             //imprimir_probabilidad_i(hormiga, TAM, h); // VISUALIZAMOS QUÉ SUCEDE CON LAS PROBABILIDADES
@@ -580,14 +572,17 @@ void sistema_hormiga(v_hormigas &hormiga, const int TAM, v_nodos &nodo, const sh
 
         // Si la lista tabú nunca llegó a completarse correctamente
         if ( iteraciones_actuales >= max_iteraciones ) { // entonces, llegó al límite de iteraciones
-            antSystem << "\nADVERTENCIA: Se alcanzado el límite máximo de iteraciones en la busqueda de nodos 'no visitados' utilizando el registro de la \"lista tabú\".\n";
+            antSystem << "\nADVERTENCIA: Se alcanzó el límite máximo de iteraciones en busca de nodos 'no visitados'.\n";
         }
 
         delete [] acumulada; // Reitera la acumulada (para obtener nuevos valores)
         antSystem << "\n";
         
-        // Muestra al usuario las soluciones de cada hormiga
-        imprimir_solucion_hormiga(hormiga, h, TAM); 
+        // Verificamos si en realidad es posible imprimir todo proceso del 'Ant System'
+        if ( imprimir ) {
+            // Escribe o muestra al usuario las soluciones de cada hormiga
+            imprimir_solucion_hormiga(hormiga, h, TAM);
+        }
         // Calcula la función objetivo de la hormiga "h"
         funcion_objetivo(hormiga, h, TAM, opcion); 
         // Muestra, de cada hormiga, el valor de la función objetivo
@@ -598,10 +593,14 @@ void sistema_hormiga(v_hormigas &hormiga, const int TAM, v_nodos &nodo, const sh
     } // Fin ciclo FOR (recorrido final de las hormigas)
 
     // Una vez que las hormigas hayan terminado, actualizamos su feromona 
-    actualizar_feromona(TAM, RHO); // Inicializa el "estado de evaporación"
+    // Inicializa el "estado de evaporación"
+    actualizar_feromona(TAM, RHO); 
 
-    antSystem << "\n\n...Feromona en su Estado de Evaporación...\n| ";
-    mostrar_feromona(TAM);
+    // Nuevamente, verificamos si es posible imprimir todos los resultados obtenidos
+    if ( imprimir ) {
+        antSystem << "\n\nFeromona en su **estado de evaporación**\n| ";
+        mostrar_feromona(TAM);
+    }
 
     // Nuevamente, recorremos el número de hormigas (sin modificar sus datos)
     for (const auto &h : hormiga ) {
@@ -614,8 +613,10 @@ void sistema_hormiga(v_hormigas &hormiga, const int TAM, v_nodos &nodo, const sh
         }
     }
 
-    antSystem << "\nFeromona [en Estado Inverso de la Función Objetivo]\n| ";
-    mostrar_feromona(TAM);
+    if ( imprimir ) {
+        antSystem << "\nFeromona (en **Estado Inverso** de la Función Objetivo)\n| ";
+        mostrar_feromona(TAM);
+    }  
     antSystem << "\n";
 
 } // Fin de la función sistema_hormiga
@@ -916,24 +917,24 @@ void funcion_objetivo(v_hormigas &hormiga, const int id_hormiga, const int NODOS
     // Calcular la cantidad de elementos (1) en el conjunto separador (valor base) para cada hormiga "h"
     conjunto_separador(hormiga, id_hormiga, NODOS_DE_LA_RED);
 
-    antSystem << ">>> Dada la [solución], se obtiene la Red Desconectada siguiente >>>\n";
+    if ( imprimir ) antSystem << "Dada la **solución**, se obtiene la **red desconectada** siguiente:\n";
 
     // SEGUNDO PASO:
     // Dividir la red según los nodos que pertenecen al conjunto separador |S|
     if ( opcion == 0 ) { // Red mediante una MATRIZ DE ADYACENCIA
         desconectar_red(hormiga, id_hormiga, matriz, NODOS_DE_LA_RED);
-        imprimir_matriz_adyacencia(hormiga[id_hormiga].matriz_red);
+        if ( imprimir ) imprimir_matriz_adyacencia(hormiga[id_hormiga].matriz_red);
     } 
     else{ // Red mediante una LISTA DE ADYACENCIA
         desconectar_red(hormiga, id_hormiga ,lista, NODOS_DE_LA_RED);
-        imprimir_lista_adyacencia(hormiga[id_hormiga].lista_red);
+        if ( imprimir ) imprimir_lista_adyacencia(hormiga[id_hormiga].lista_red);
     }
 
     // TERCER PASO:
     // Construir el número de componentes y sus nodos disponibles (respecto a la representación de la red)
     componentes_de_la_red(hormiga, id_hormiga, opcion);
     // Mostramos el número de componentes creados
-    mostrar_componentes(hormiga, id_hormiga);
+    if ( imprimir ) mostrar_componentes(hormiga, id_hormiga);
 
     /*
     CUARTO PASO: 
@@ -1025,7 +1026,15 @@ void mostrar_MejorPeor_funcionObjetivo(bool utilizo_algoritmoED) {
 
     // Verifica si el usuario eligió implementar el programa a través del algoritmo evolutivo
     if ( utilizo_algoritmoED ) {
-        cout << mejor_costo; // Si lo fue, entonces, registramos el valor de la F.O. (como métrica de la robustez). En este caso, el mejor costo
+        /*ofstream leer_archivo_ED("resultado.txt");
+
+        if ( !leer_archivo_ED ) { // Verifica si en verdad existe el archivo creado por el algoritmo evolutivo (E.D.)
+            cout << "\nPosible error al intentar **abrir** y **escribir** archivo generado por el algoritmo evolutivo Evolución Diferencial\n";
+        }
+
+        leer_archivo_ED << mejor_costo; // Si lo fue, entonces, registramos el valor de la F.O. (como métrica de la robustez). En este caso, el mejor costo
+        leer_archivo_ED.close();*/
+        cout << mejor_costo;
     }
     else { // Caso contrario, eligió hacerlo manual y, por tanto, imprimimos de manera completa todos los resultados
         cout << "\t- Mejor Función Objetivo: " << mejor_costo << "\n";
@@ -1033,4 +1042,3 @@ void mostrar_MejorPeor_funcionObjetivo(bool utilizo_algoritmoED) {
     }
 
 } // Fin de la función mostrar_MejorPeor_funcionObjetivo
-
