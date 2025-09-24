@@ -29,6 +29,17 @@
     planteado.
 */
 
+/*  ==========================================================================
+    Comprueba la condición de ejecución del algoritmo de Evolución Diferencial
+    cuando el entorno operativo **no** corresponde a Windows, garantizando así
+    la correcta portabilidad del programa en otros sistemas (Linux/Unix, macOS).
+*/
+
+#ifndef _WIN32 
+    // -- Definiciones específicas para sistemas UNIX (Linux / macOS) --
+    #define _POSIX_C_SOURCE 200809L 
+#endif
+
 /*-------------------------------------------------------------------------------------
     Conjunto de bibliotecas estándar del lenguaje C empleadas en el desarrollo del
     algoritmo de **Evolución Diferencial**. 
@@ -43,6 +54,19 @@
 #include <stdlib.h>  // Biblioteca que ofrece funciones para la gestión de memoria dinámica (Heap), conversión numérica y utilidades generales, optimizando el manejo de datos y previniendo fugas de memoria
 #include <stdbool.h> // En C, a diferencia de C++, no existe el tipo nativo 'bool'; esta biblioteca permite manejar valores booleanos (true/false) de forma estandarizada y eficiente
 #include <time.h>    // Biblioteca estándar para la gestión de fechas y horas, que además permite formatear información temporal (en este caso, mediante la función 'time')
+
+/*
+    --- Compatibilidad con Windows mediante la función **popen** ---
+ 
+    Establece la adaptación necesaria para garantizar el uso correcto de 
+    la función 'popen' en sistemas Windows, asegurando la gestión de 
+    procesos/hilos de forma equivalente a entornos UNIX.
+*/
+
+#ifdef _WIN32
+    #define popen  _popen
+    #define pclose _pclose
+#endif
 
 /*
     Configuración y datos iniciales para la ejecución del algoritmo de Evolución Diferencial,
