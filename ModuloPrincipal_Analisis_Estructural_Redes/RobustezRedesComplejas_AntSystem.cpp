@@ -104,7 +104,7 @@ int main ( int argc, char *argv[] ) {
         cout << "IMPORTANTE: se ha determinado la función objetivo que representa el valor óptimo --> " << costo_optimo_encontrado << "\n\n";
     }
     else {
-        printf("%.17g", costo_optimo_encontrado);
+        printf("%.17g\n", costo_optimo_encontrado);
     }
 
     return 0; //    That's All Folks...!!  ^(^-^)^
